@@ -6,55 +6,42 @@ import { Resolver, Query, Ctx, Arg, Int, Mutation } from 'type-graphql'
 export class PostResolver {
   // All posts
   @Query(() => [Post])
-  posts(@Ctx() { em }: ServerContext): Promise<Post[]> {
-    return em.find(Post, {})
+  async posts(): Promise<Post[]> {
+    return Post.find()
   }
 
   // One post
   @Query(() => Post, { nullable: true })
-  post(
-    @Ctx() { em }: ServerContext,
-    @Arg('id', () => Int) _id: number
-  ): Promise<Post | null> {
-    return em.findOne(Post, { _id })
+  post(@Arg('id', () => Int) _id: number): Promise<Post | undefined> {
+    return Post.findOne(_id)
   }
 
   // Create post
   @Mutation(() => Post)
-  async createPost(
-    @Ctx() { em }: ServerContext,
-    @Arg('title') title: string
-  ): Promise<Post> {
-    const post = em.create(Post, { title })
-    await em.persistAndFlush(post)
-    return post
+  async createPost(@Arg('title') title: string): Promise<Post> {
+    return Post.create({ title }).save()
   }
 
   // Update post
   @Mutation(() => Post, { nullable: true })
   async updatePost(
-    @Ctx() { em }: ServerContext,
     @Arg('id') _id: number,
     @Arg('title', () => String) title: string
   ): Promise<Post | null> {
-    const post = await em.findOne(Post, { _id })
+    const post = await Post.findOne({ _id })
     if (!post) {
       return null
     }
     if (typeof title !== 'undefined') {
-      post.title = title
-      await em.persistAndFlush(post)
+      Post.update({ _id }, { title })
     }
     return post
   }
 
   // Delete post
   @Mutation(() => Boolean)
-  async deletePost(
-    @Ctx() { em }: ServerContext,
-    @Arg('id', () => Int) _id: number
-  ): Promise<Boolean> {
-    await em.nativeDelete(Post, { _id })
+  async deletePost(@Arg('id', () => Int) _id: number): Promise<Boolean> {
+    await Post.delete(_id)
     return true
   }
 }

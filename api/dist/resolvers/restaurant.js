@@ -13,42 +13,54 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RestaurantResolver = void 0;
+const typeorm_1 = require("typeorm");
+const isAuth_1 = require("./../middleware/isAuth");
 const Restaurant_1 = require("../entities/Restaurant");
 const type_graphql_1 = require("type-graphql");
 let RestaurantResolver = class RestaurantResolver {
-    restaurants({ em }) {
-        return em.find(Restaurant_1.Restaurant, {});
+    restaurants(limit, cursor) {
+        const realLimit = Math.min(limit, 50);
+        const query = (0, typeorm_1.getConnection)()
+            .getRepository(Restaurant_1.Restaurant)
+            .createQueryBuilder('r')
+            .take(realLimit)
+            .orderBy('"createdAt"', 'DESC');
+        if (cursor) {
+            query.where('"createdAt" < :cursor', {
+                cursor: new Date(parseInt(cursor)),
+            });
+        }
+        return query.getMany();
     }
-    restaurant({ em }, _id) {
-        return em.findOne(Restaurant_1.Restaurant, { _id });
+    restaurant(_id) {
+        return Restaurant_1.Restaurant.findOne({ _id });
     }
-    async createRestaurant({ em }, name) {
-        const restaurant = em.create(Restaurant_1.Restaurant, { name });
-        await em.persistAndFlush(restaurant);
+    async createRestaurant(name) {
+        const restaurant = Restaurant_1.Restaurant.create({ name }).save();
         return restaurant;
     }
 };
 __decorate([
     (0, type_graphql_1.Query)(() => [Restaurant_1.Restaurant]),
-    __param(0, (0, type_graphql_1.Ctx)()),
+    __param(0, (0, type_graphql_1.Arg)('limit', () => type_graphql_1.Int)),
+    __param(1, (0, type_graphql_1.Arg)('cursor', () => String, { nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], RestaurantResolver.prototype, "restaurants", null);
 __decorate([
     (0, type_graphql_1.Query)(() => Restaurant_1.Restaurant, { nullable: true }),
-    __param(0, (0, type_graphql_1.Ctx)()),
-    __param(1, (0, type_graphql_1.Arg)('id', () => type_graphql_1.Int)),
+    __param(0, (0, type_graphql_1.Arg)('id', () => type_graphql_1.Int)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], RestaurantResolver.prototype, "restaurant", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => Restaurant_1.Restaurant),
-    __param(0, (0, type_graphql_1.Ctx)()),
-    __param(1, (0, type_graphql_1.Arg)('name')),
+    (0, type_graphql_1.UseMiddleware)(isAuth_1.isAuth),
+    __param(0, (0, type_graphql_1.Arg)('name')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], RestaurantResolver.prototype, "createRestaurant", null);
 RestaurantResolver = __decorate([

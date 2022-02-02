@@ -1,22 +1,34 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
+import { Review } from './Review'
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  BaseEntity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm'
 import { Field, ObjectType } from 'type-graphql'
 
 @ObjectType()
 @Entity()
-export class Restaurant {
+export class Restaurant extends BaseEntity {
   @Field()
-  @PrimaryKey()
+  @PrimaryGeneratedColumn()
   _id!: number
 
-  @Field(() => String)
-  @Property({ type: 'date' })
-  createdAt = new Date()
+  @OneToMany(() => Review, (review) => review.restaurant)
+  reviews: Review[]
 
   @Field(() => String)
-  @Property({ type: 'date', onUpdate: () => new Date() })
-  updatedAt = new Date()
+  @CreateDateColumn()
+  createdAt: Date
+
+  @Field(() => String)
+  @UpdateDateColumn()
+  updatedAt: Date
 
   @Field()
-  @Property({ type: 'text' })
+  @Column({ unique: true })
   name!: string
 }

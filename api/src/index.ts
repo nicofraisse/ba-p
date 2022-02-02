@@ -1,28 +1,39 @@
+import { ReviewResolver } from './resolvers/review'
+import { Review } from './entities/Review'
+import { Post } from './entities/Post'
+import { User } from './entities/User'
 import { UserResolver } from './resolvers/user'
 import { RestaurantResolver } from './resolvers/restaurant'
 import { PostResolver } from './resolvers/post'
-import { MikroORM } from '@mikro-orm/core'
 import { ApolloServer } from 'apollo-server-express'
 import express from 'express'
 import { buildSchema } from 'type-graphql'
-import mikroConfig from './mikro-orm.config'
 import 'reflect-metadata'
 import cors from 'cors'
-import { createClient } from 'redis'
+import Redis from 'ioredis'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
 import { __prod__ } from './constants'
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
+import { createConnection } from 'typeorm'
+import { Restaurant } from './entities/Restaurant'
 
 const main = async () => {
-  const orm = await MikroORM.init(mikroConfig)
+  const conn = await createConnection({
+    type: 'postgres',
+    database: 'poutineworld2',
+    username: 'postgres',
+    password: 'postgres',
+    logging: true,
+    synchronize: true,
+    entities: [Post, User, Review, Restaurant],
+  })
 
   // Run all new migrations whenever server restarts
-  await orm.getMigrator().up()
 
   const app = express()
-  let RedisStore = connectRedis(session)
-  let redisClient = createClient()
+  const RedisStore = connectRedis(session)
+  const redis = new Redis()
 
   app.use(
     cors({
@@ -33,7 +44,7 @@ const main = async () => {
   app.use(
     session({
       name: 'qid',
-      store: new RedisStore({ client: redisClient, disableTouch: true }),
+      store: new RedisStore({ client: redis, disableTouch: true }),
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true, // can't access cookie from frontend js code
@@ -48,10 +59,15 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [PostResolver, RestaurantResolver, UserResolver],
+      resolvers: [
+        PostResolver,
+        RestaurantResolver,
+        UserResolver,
+        ReviewResolver,
+      ],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em: orm.em, req, res }),
+    context: ({ req, res }) => ({ req, res, redis }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
   })
 

@@ -1,32 +1,52 @@
-import { ServerContext } from './../types'
+import { getConnection } from 'typeorm'
+import { isAuth } from './../middleware/isAuth'
 import { Restaurant } from '../entities/Restaurant'
-import { Resolver, Query, Ctx, Arg, Int, Mutation } from 'type-graphql'
+import {
+  Resolver,
+  Query,
+  Arg,
+  Int,
+  Mutation,
+  UseMiddleware,
+} from 'type-graphql'
 
 @Resolver()
 export class RestaurantResolver {
   // All restaurants
   @Query(() => [Restaurant])
-  restaurants(@Ctx() { em }: ServerContext): Promise<Restaurant[]> {
-    return em.find(Restaurant, {})
+  restaurants(
+    @Arg('limit', () => Int) limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor: string | null
+  ): Promise<Restaurant[]> {
+    const realLimit = Math.min(limit, 50)
+    const query = getConnection()
+      .getRepository(Restaurant)
+      .createQueryBuilder('r')
+      .take(realLimit)
+      .orderBy('"createdAt"', 'DESC')
+
+    if (cursor) {
+      query.where('"createdAt" < :cursor', {
+        cursor: new Date(parseInt(cursor)),
+      })
+    }
+
+    return query.getMany()
   }
 
   // One restaurant
   @Query(() => Restaurant, { nullable: true })
   restaurant(
-    @Ctx() { em }: ServerContext,
     @Arg('id', () => Int) _id: number
-  ): Promise<Restaurant | null> {
-    return em.findOne(Restaurant, { _id })
+  ): Promise<Restaurant | undefined> {
+    return Restaurant.findOne({ _id })
   }
 
   // Create a restaurant
   @Mutation(() => Restaurant)
-  async createRestaurant(
-    @Ctx() { em }: ServerContext,
-    @Arg('name') name: string
-  ): Promise<Restaurant> {
-    const restaurant = em.create(Restaurant, { name })
-    await em.persistAndFlush(restaurant)
+  @UseMiddleware(isAuth)
+  async createRestaurant(@Arg('name') name: string): Promise<Restaurant> {
+    const restaurant = Restaurant.create({ name }).save()
     return restaurant
   }
 }
