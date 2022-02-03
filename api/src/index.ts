@@ -1,3 +1,4 @@
+import { Upvote } from './entities/Upvote'
 import { ReviewResolver } from './resolvers/review'
 import { Review } from './entities/Review'
 import { Post } from './entities/Post'
@@ -19,14 +20,14 @@ import { createConnection } from 'typeorm'
 import { Restaurant } from './entities/Restaurant'
 
 const main = async () => {
-  const conn = await createConnection({
+  await createConnection({
     type: 'postgres',
-    database: 'poutineworld2',
+    database: 'poutineworld4',
     username: 'postgres',
     password: 'postgres',
     logging: true,
     synchronize: true,
-    entities: [Post, User, Review, Restaurant],
+    entities: [Post, User, Review, Restaurant, Upvote],
   })
 
   // Run all new migrations whenever server restarts

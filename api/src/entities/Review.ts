@@ -1,14 +1,16 @@
-import { Field, ObjectType } from 'type-graphql'
+import { Field, Int, ObjectType } from 'type-graphql'
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
 import { Restaurant } from './Restaurant'
+import { Upvote } from './Upvote'
 import { User } from './User'
 
 @ObjectType()
@@ -16,7 +18,7 @@ import { User } from './User'
 export class Review extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
-  _id!: number
+  id!: number
 
   @Field(() => String)
   @CreateDateColumn()
@@ -26,16 +28,20 @@ export class Review extends BaseEntity {
   @UpdateDateColumn()
   updatedAt: Date
 
+  @Field(() => Int)
+  @Column()
+  restaurantId!: number
+
   @Field()
   @Column()
   userId: number
 
   @Field()
-  @Column()
-  restaurantId!: number
-
-  @ManyToOne(() => User, (user: User) => user.reviews)
+  @ManyToOne(() => User, (user) => user.reviews, { eager: true })
   user: User
+
+  @OneToMany(() => Upvote, (upvote) => upvote.review)
+  upvotes: Upvote[]
 
   @ManyToOne(() => Restaurant, (restaurant: Restaurant) => restaurant.reviews)
   restaurant: Restaurant

@@ -17,23 +17,41 @@ const typeorm_1 = require("typeorm");
 const isAuth_1 = require("./../middleware/isAuth");
 const Restaurant_1 = require("../entities/Restaurant");
 const type_graphql_1 = require("type-graphql");
+let PaginatedRestaurants = class PaginatedRestaurants {
+};
+__decorate([
+    (0, type_graphql_1.Field)(() => [Restaurant_1.Restaurant]),
+    __metadata("design:type", Array)
+], PaginatedRestaurants.prototype, "restaurants", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], PaginatedRestaurants.prototype, "hasMore", void 0);
+PaginatedRestaurants = __decorate([
+    (0, type_graphql_1.ObjectType)()
+], PaginatedRestaurants);
 let RestaurantResolver = class RestaurantResolver {
-    restaurants(limit, cursor) {
+    async restaurants(limit, cursor) {
         const realLimit = Math.min(limit, 50);
+        const realLimitPlusOne = realLimit + 1;
         const query = (0, typeorm_1.getConnection)()
             .getRepository(Restaurant_1.Restaurant)
             .createQueryBuilder('r')
-            .take(realLimit)
-            .orderBy('"createdAt"', 'DESC');
+            .orderBy('"createdAt"', 'DESC')
+            .take(realLimitPlusOne);
         if (cursor) {
             query.where('"createdAt" < :cursor', {
                 cursor: new Date(parseInt(cursor)),
             });
         }
-        return query.getMany();
+        const restaurants = await query.getMany();
+        return {
+            hasMore: restaurants.length === realLimitPlusOne,
+            restaurants: restaurants.slice(0, realLimit),
+        };
     }
-    restaurant(_id) {
-        return Restaurant_1.Restaurant.findOne({ _id });
+    restaurant(id) {
+        return Restaurant_1.Restaurant.findOne({ id });
     }
     async createRestaurant(name) {
         const restaurant = Restaurant_1.Restaurant.create({ name }).save();
@@ -41,7 +59,7 @@ let RestaurantResolver = class RestaurantResolver {
     }
 };
 __decorate([
-    (0, type_graphql_1.Query)(() => [Restaurant_1.Restaurant]),
+    (0, type_graphql_1.Query)(() => PaginatedRestaurants),
     __param(0, (0, type_graphql_1.Arg)('limit', () => type_graphql_1.Int)),
     __param(1, (0, type_graphql_1.Arg)('cursor', () => String, { nullable: true })),
     __metadata("design:type", Function),
@@ -64,7 +82,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], RestaurantResolver.prototype, "createRestaurant", null);
 RestaurantResolver = __decorate([
-    (0, type_graphql_1.Resolver)()
+    (0, type_graphql_1.Resolver)(Restaurant_1.Restaurant)
 ], RestaurantResolver);
 exports.RestaurantResolver = RestaurantResolver;
 //# sourceMappingURL=restaurant.js.map

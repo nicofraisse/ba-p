@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReviewResolver = void 0;
+const typeorm_1 = require("typeorm");
 const isAuth_1 = require("./../middleware/isAuth");
 const Review_1 = require("../entities/Review");
 const type_graphql_1 = require("type-graphql");
@@ -34,35 +35,54 @@ ReviewInput = __decorate([
     (0, type_graphql_1.InputType)()
 ], ReviewInput);
 let ReviewResolver = class ReviewResolver {
-    async reviews() {
-        return Review_1.Review.find();
+    async reviews(restaurantId) {
+        const reviews = await Review_1.Review.find(restaurantId ? { where: { restaurantId } } : {});
+        return reviews;
     }
-    review(_id) {
-        return Review_1.Review.findOne(_id);
+    review(id) {
+        return Review_1.Review.findOne(id);
     }
     async createReview(input, { req }) {
         const review = await Review_1.Review.create(Object.assign(Object.assign({}, input), { userId: req.session.userId })).save();
         return review;
     }
-    async updateReview(_id, comment) {
-        const review = await Review_1.Review.findOne({ _id });
+    async updateReview(id, comment) {
+        const review = await Review_1.Review.findOne(id);
         if (!review) {
             return null;
         }
         if (typeof comment !== 'undefined') {
-            Review_1.Review.update({ _id }, { comment });
+            Review_1.Review.update({ id }, { comment });
         }
         return review;
     }
-    async deleteReview(_id) {
-        await Review_1.Review.delete(_id);
+    async deleteReview(id) {
+        await Review_1.Review.delete(id);
+        return true;
+    }
+    async vote(reviewId, value, { req }) {
+        const isUpvote = value !== -1;
+        const realValue = isUpvote ? 1 : -1;
+        const { userId } = req.session;
+        await (0, typeorm_1.getConnection)().query(`
+    START TRANSACTION;
+
+    insert into upvote ("userId", "reviewId", value)
+    values(${userId}, ${reviewId}, ${realValue})'
+
+    update review
+    set points = points + ${realValue}
+    where id = ${reviewId}
+
+    COMMIT;`);
         return true;
     }
 };
 __decorate([
     (0, type_graphql_1.Query)(() => [Review_1.Review]),
+    __param(0, (0, type_graphql_1.Arg)('restaurantId', () => type_graphql_1.Int, { nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ReviewResolver.prototype, "reviews", null);
 __decorate([
@@ -96,6 +116,15 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ReviewResolver.prototype, "deleteReview", null);
+__decorate([
+    (0, type_graphql_1.Mutation)(() => Boolean),
+    __param(0, (0, type_graphql_1.Arg)('reviewId', () => type_graphql_1.Int)),
+    __param(1, (0, type_graphql_1.Arg)('value', () => type_graphql_1.Int)),
+    __param(2, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, Object]),
+    __metadata("design:returntype", Promise)
+], ReviewResolver.prototype, "vote", null);
 ReviewResolver = __decorate([
     (0, type_graphql_1.Resolver)()
 ], ReviewResolver);

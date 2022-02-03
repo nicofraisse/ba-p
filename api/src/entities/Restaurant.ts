@@ -15,8 +15,9 @@ import { Field, ObjectType } from 'type-graphql'
 export class Restaurant extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
-  _id!: number
+  id!: number
 
+  @Field(() => Review)
   @OneToMany(() => Review, (review) => review.restaurant)
   reviews: Review[]
 

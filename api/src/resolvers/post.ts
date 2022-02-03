@@ -1,6 +1,5 @@
-import { ServerContext } from './../types'
 import { Post } from '../entities/Post'
-import { Resolver, Query, Ctx, Arg, Int, Mutation } from 'type-graphql'
+import { Resolver, Query, Arg, Int, Mutation } from 'type-graphql'
 
 @Resolver()
 export class PostResolver {
@@ -12,8 +11,8 @@ export class PostResolver {
 
   // One post
   @Query(() => Post, { nullable: true })
-  post(@Arg('id', () => Int) _id: number): Promise<Post | undefined> {
-    return Post.findOne(_id)
+  post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id)
   }
 
   // Create post
@@ -25,23 +24,23 @@ export class PostResolver {
   // Update post
   @Mutation(() => Post, { nullable: true })
   async updatePost(
-    @Arg('id') _id: number,
+    @Arg('id') id: number,
     @Arg('title', () => String) title: string
   ): Promise<Post | null> {
-    const post = await Post.findOne({ _id })
+    const post = await Post.findOne({ id })
     if (!post) {
       return null
     }
     if (typeof title !== 'undefined') {
-      Post.update({ _id }, { title })
+      Post.update({ id }, { title })
     }
     return post
   }
 
   // Delete post
   @Mutation(() => Boolean)
-  async deletePost(@Arg('id', () => Int) _id: number): Promise<Boolean> {
-    await Post.delete(_id)
+  async deletePost(@Arg('id', () => Int) id: number): Promise<Boolean> {
+    await Post.delete(id)
     return true
   }
 }

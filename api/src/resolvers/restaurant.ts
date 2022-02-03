@@ -8,22 +8,33 @@ import {
   Int,
   Mutation,
   UseMiddleware,
+  ObjectType,
+  Field,
 } from 'type-graphql'
 
-@Resolver()
+@ObjectType()
+class PaginatedRestaurants {
+  @Field(() => [Restaurant])
+  restaurants: Restaurant[]
+  @Field()
+  hasMore: boolean
+}
+
+@Resolver(Restaurant)
 export class RestaurantResolver {
-  // All restaurants
-  @Query(() => [Restaurant])
-  restaurants(
+  // Paginated restaurants
+  @Query(() => PaginatedRestaurants)
+  async restaurants(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null
-  ): Promise<Restaurant[]> {
+  ): Promise<PaginatedRestaurants> {
     const realLimit = Math.min(limit, 50)
+    const realLimitPlusOne = realLimit + 1
     const query = getConnection()
       .getRepository(Restaurant)
       .createQueryBuilder('r')
-      .take(realLimit)
       .orderBy('"createdAt"', 'DESC')
+      .take(realLimitPlusOne)
 
     if (cursor) {
       query.where('"createdAt" < :cursor', {
@@ -31,15 +42,20 @@ export class RestaurantResolver {
       })
     }
 
-    return query.getMany()
+    const restaurants = await query.getMany()
+
+    return {
+      hasMore: restaurants.length === realLimitPlusOne,
+      restaurants: restaurants.slice(0, realLimit),
+    }
   }
 
   // One restaurant
   @Query(() => Restaurant, { nullable: true })
   restaurant(
-    @Arg('id', () => Int) _id: number
+    @Arg('id', () => Int) id: number
   ): Promise<Restaurant | undefined> {
-    return Restaurant.findOne({ _id })
+    return Restaurant.findOne({ id })
   }
 
   // Create a restaurant

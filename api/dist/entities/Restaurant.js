@@ -19,8 +19,9 @@ __decorate([
     (0, type_graphql_1.Field)(),
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Restaurant.prototype, "_id", void 0);
+], Restaurant.prototype, "id", void 0);
 __decorate([
+    (0, type_graphql_1.Field)(() => Review_1.Review),
     (0, typeorm_1.OneToMany)(() => Review_1.Review, (review) => review.restaurant),
     __metadata("design:type", Array)
 ], Restaurant.prototype, "reviews", void 0);

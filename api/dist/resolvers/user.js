@@ -59,7 +59,6 @@ let UserResolver = class UserResolver {
         return User_1.User.findOne(req.session.userId);
     }
     async register(options, { req }) {
-        console.log('we doing stuff');
         const errors = (0, validateRegister_1.validateRegister)(options);
         if (errors)
             return { errors };
@@ -77,7 +76,6 @@ let UserResolver = class UserResolver {
             })
                 .returning('*')
                 .execute();
-            console.log('sdjklfhasdh', result.raw[0]);
             user = result.raw[0];
         }
         catch (e) {
@@ -91,7 +89,7 @@ let UserResolver = class UserResolver {
                     ],
                 };
         }
-        req.session.userId = user._id;
+        req.session.userId = user.id;
         return { user };
     }
     async login(usernameOrEmail, password, { req }) {
@@ -114,7 +112,7 @@ let UserResolver = class UserResolver {
                 errors: [{ field: 'password', message: 'mot de passe incorrect' }],
             };
         }
-        req.session.userId = user._id;
+        req.session.userId = user.id;
         return { user };
     }
     logout({ req, res }) {
@@ -133,7 +131,7 @@ let UserResolver = class UserResolver {
         if (!user)
             return true;
         const token = (0, uuid_1.v4)();
-        await redis.set(constants_1.FORGET_PASSWORD_PREFIX + token, user._id, 'ex', 1000 * 60 * 60 * 24 * 7);
+        await redis.set(constants_1.FORGET_PASSWORD_PREFIX + token, user.id, 'ex', 1000 * 60 * 60 * 24 * 7);
         const html = `<a href="http://localhost:3000/change-password/${token}">Reset password</a>`;
         await (0, sendEmail_1.sendEmail)(email, html);
         return true;
@@ -160,7 +158,7 @@ let UserResolver = class UserResolver {
                 ],
             };
         }
-        const user = await User_1.User.findOne({ _id: parseInt(userId) });
+        const user = await User_1.User.findOne({ id: parseInt(userId) });
         if (!user) {
             return {
                 errors: [
@@ -171,10 +169,10 @@ let UserResolver = class UserResolver {
                 ],
             };
         }
-        User_1.User.update({ _id: parseInt(userId) }, { password: await argon2_1.default.hash(newPassword) });
+        User_1.User.update({ id: parseInt(userId) }, { password: await argon2_1.default.hash(newPassword) });
         const key = constants_1.FORGET_PASSWORD_PREFIX + token;
         await redis.del(key);
-        req.session.userId = user._id;
+        req.session.userId = user.id;
         return { user };
     }
 };

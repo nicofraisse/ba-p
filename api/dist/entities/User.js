@@ -13,22 +13,28 @@ exports.User = void 0;
 const type_graphql_1 = require("type-graphql");
 const typeorm_1 = require("typeorm");
 const Review_1 = require("./Review");
+const Upvote_1 = require("./Upvote");
 let User = class User extends typeorm_1.BaseEntity {
 };
 __decorate([
     (0, type_graphql_1.Field)(),
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], User.prototype, "_id", void 0);
+], User.prototype, "id", void 0);
 __decorate([
     (0, type_graphql_1.Field)(() => String),
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], User.prototype, "createdAt", void 0);
 __decorate([
+    (0, type_graphql_1.Field)(() => Review_1.Review),
     (0, typeorm_1.OneToMany)(() => Review_1.Review, (review) => review.user),
     __metadata("design:type", Array)
 ], User.prototype, "reviews", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Upvote_1.Upvote, (upvote) => upvote.user),
+    __metadata("design:type", Array)
+], User.prototype, "upvotes", void 0);
 __decorate([
     (0, type_graphql_1.Field)(),
     (0, typeorm_1.UpdateDateColumn)(),

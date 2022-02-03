@@ -49,7 +49,6 @@ export class UserResolver {
     @Arg('options') options: UsernamePasswordInput,
     @Ctx() { req }: ServerContext
   ): Promise<UserResponse> {
-    console.log('we doing stuff')
     const errors = validateRegister(options)
     if (errors) return { errors }
 
@@ -69,7 +68,6 @@ export class UserResolver {
         })
         .returning('*')
         .execute()
-      console.log('sdjklfhasdh', result.raw[0])
       user = result.raw[0]
     } catch (e) {
       if (e.code === '23505')
@@ -82,7 +80,7 @@ export class UserResolver {
           ],
         }
     }
-    req.session.userId = user._id
+    req.session.userId = user.id
 
     return { user }
   }
@@ -116,7 +114,7 @@ export class UserResolver {
       }
     }
 
-    req.session!.userId = user._id
+    req.session!.userId = user.id
     return { user }
   }
 
@@ -149,7 +147,7 @@ export class UserResolver {
     // store user's token in redis for 7 days
     await redis.set(
       FORGET_PASSWORD_PREFIX + token,
-      user._id,
+      user.id,
       'ex',
       1000 * 60 * 60 * 24 * 7
     )
@@ -189,7 +187,7 @@ export class UserResolver {
         ],
       }
     }
-    const user = await User.findOne({ _id: parseInt(userId) })
+    const user = await User.findOne({ id: parseInt(userId) })
     if (!user) {
       return {
         errors: [
@@ -202,13 +200,13 @@ export class UserResolver {
     }
 
     User.update(
-      { _id: parseInt(userId) },
+      { id: parseInt(userId) },
       { password: await argon2.hash(newPassword) }
     )
     const key = FORGET_PASSWORD_PREFIX + token
     await redis.del(key)
     // log them in
-    req.session.userId = user._id
+    req.session.userId = user.id
     return { user }
   }
 }

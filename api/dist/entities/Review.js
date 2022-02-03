@@ -13,6 +13,7 @@ exports.Review = void 0;
 const type_graphql_1 = require("type-graphql");
 const typeorm_1 = require("typeorm");
 const Restaurant_1 = require("./Restaurant");
+const Upvote_1 = require("./Upvote");
 const User_1 = require("./User");
 let Review = class Review extends typeorm_1.BaseEntity {
 };
@@ -20,7 +21,7 @@ __decorate([
     (0, type_graphql_1.Field)(),
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Review.prototype, "_id", void 0);
+], Review.prototype, "id", void 0);
 __decorate([
     (0, type_graphql_1.Field)(() => String),
     (0, typeorm_1.CreateDateColumn)(),
@@ -32,19 +33,24 @@ __decorate([
     __metadata("design:type", Date)
 ], Review.prototype, "updatedAt", void 0);
 __decorate([
+    (0, type_graphql_1.Field)(() => type_graphql_1.Int),
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
+], Review.prototype, "restaurantId", void 0);
+__decorate([
     (0, type_graphql_1.Field)(),
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], Review.prototype, "userId", void 0);
 __decorate([
     (0, type_graphql_1.Field)(),
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Review.prototype, "restaurantId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => User_1.User, (user) => user.reviews),
+    (0, typeorm_1.ManyToOne)(() => User_1.User, (user) => user.reviews, { eager: true }),
     __metadata("design:type", User_1.User)
 ], Review.prototype, "user", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Upvote_1.Upvote, (upvote) => upvote.review),
+    __metadata("design:type", Array)
+], Review.prototype, "upvotes", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Restaurant_1.Restaurant, (restaurant) => restaurant.reviews),
     __metadata("design:type", Restaurant_1.Restaurant)

@@ -9,19 +9,24 @@ import {
   UpdateDateColumn,
 } from 'typeorm'
 import { Review } from './Review'
+import { Upvote } from './Upvote'
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
-  _id!: number
+  id!: number
 
   @Field(() => String)
   @CreateDateColumn()
   createdAt: Date
 
+  @Field(() => Review)
   @OneToMany(() => Review, (review) => review.user)
   reviews: Review[]
+
+  @OneToMany(() => Upvote, (upvote) => upvote.user)
+  upvotes: Upvote[]
 
   @Field()
   @UpdateDateColumn()

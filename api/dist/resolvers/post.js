@@ -19,24 +19,24 @@ let PostResolver = class PostResolver {
     async posts() {
         return Post_1.Post.find();
     }
-    post(_id) {
-        return Post_1.Post.findOne(_id);
+    post(id) {
+        return Post_1.Post.findOne(id);
     }
     async createPost(title) {
         return Post_1.Post.create({ title }).save();
     }
-    async updatePost(_id, title) {
-        const post = await Post_1.Post.findOne({ _id });
+    async updatePost(id, title) {
+        const post = await Post_1.Post.findOne({ id });
         if (!post) {
             return null;
         }
         if (typeof title !== 'undefined') {
-            Post_1.Post.update({ _id }, { title });
+            Post_1.Post.update({ id }, { title });
         }
         return post;
     }
-    async deletePost(_id) {
-        await Post_1.Post.delete(_id);
+    async deletePost(id) {
+        await Post_1.Post.delete(id);
         return true;
     }
 };

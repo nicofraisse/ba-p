@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Upvote_1 = require("./entities/Upvote");
 const review_1 = require("./resolvers/review");
 const Review_1 = require("./entities/Review");
 const Post_1 = require("./entities/Post");
@@ -23,14 +24,14 @@ const apollo_server_core_1 = require("apollo-server-core");
 const typeorm_1 = require("typeorm");
 const Restaurant_1 = require("./entities/Restaurant");
 const main = async () => {
-    const conn = await (0, typeorm_1.createConnection)({
+    await (0, typeorm_1.createConnection)({
         type: 'postgres',
-        database: 'poutineworld2',
+        database: 'poutineworld4',
         username: 'postgres',
         password: 'postgres',
         logging: true,
         synchronize: true,
-        entities: [Post_1.Post, User_1.User, Review_1.Review, Restaurant_1.Restaurant],
+        entities: [Post_1.Post, User_1.User, Review_1.Review, Restaurant_1.Restaurant, Upvote_1.Upvote],
     });
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
