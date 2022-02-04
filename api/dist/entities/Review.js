@@ -28,6 +28,10 @@ __decorate([
     __metadata("design:type", Date)
 ], Review.prototype, "createdAt", void 0);
 __decorate([
+    (0, type_graphql_1.Field)(() => type_graphql_1.Int, { nullable: true }),
+    __metadata("design:type", Object)
+], Review.prototype, "voteStatus", void 0);
+__decorate([
     (0, type_graphql_1.Field)(() => String),
     (0, typeorm_1.UpdateDateColumn)(),
     __metadata("design:type", Date)

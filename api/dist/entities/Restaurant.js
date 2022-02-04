@@ -37,6 +37,18 @@ __decorate([
 ], Restaurant.prototype, "updatedAt", void 0);
 __decorate([
     (0, type_graphql_1.Field)(),
+    __metadata("design:type", Number)
+], Restaurant.prototype, "reviewCount", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", Number)
+], Restaurant.prototype, "averageRating", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], Restaurant.prototype, "aleadyRated", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
     (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
 ], Restaurant.prototype, "name", void 0);

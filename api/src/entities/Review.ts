@@ -24,6 +24,9 @@ export class Review extends BaseEntity {
   @CreateDateColumn()
   createdAt: Date
 
+  @Field(() => Int, { nullable: true })
+  voteStatus: number | null
+
   @Field(() => String)
   @UpdateDateColumn()
   updatedAt: Date

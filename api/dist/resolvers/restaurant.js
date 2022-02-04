@@ -13,10 +13,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RestaurantResolver = void 0;
-const typeorm_1 = require("typeorm");
-const isAuth_1 = require("./../middleware/isAuth");
-const Restaurant_1 = require("../entities/Restaurant");
 const type_graphql_1 = require("type-graphql");
+const typeorm_1 = require("typeorm");
+const Restaurant_1 = require("../entities/Restaurant");
+const Review_1 = require("../entities/Review");
+const isAuth_1 = require("./../middleware/isAuth");
 let PaginatedRestaurants = class PaginatedRestaurants {
 };
 __decorate([
@@ -57,6 +58,38 @@ let RestaurantResolver = class RestaurantResolver {
         const restaurant = Restaurant_1.Restaurant.create({ name }).save();
         return restaurant;
     }
+    async reviewCount(restaurant) {
+        const restaurantReviews = await Review_1.Review.find({
+            where: { restaurantId: restaurant.id },
+        });
+        if (!restaurantReviews) {
+            return 0;
+        }
+        return restaurantReviews.length;
+    }
+    async averageRating(restaurant) {
+        let { avg } = await (0, typeorm_1.getConnection)()
+            .getRepository(Review_1.Review)
+            .createQueryBuilder('r')
+            .select('AVG(r.rating)', 'avg')
+            .where('"restaurantId" = :id', { id: `${restaurant.id}` })
+            .getRawOne();
+        return avg || 0;
+    }
+    async alreadyRated({ req }, restaurant) {
+        console.log('there is', req.session);
+        if (!req.session.userId) {
+            return false;
+        }
+        const review = await Review_1.Review.findOne({
+            where: {
+                userId: req.session.userId,
+                restaurantId: restaurant.id,
+            },
+        });
+        console.log('yoo', review);
+        return !!review;
+    }
 };
 __decorate([
     (0, type_graphql_1.Query)(() => PaginatedRestaurants),
@@ -81,6 +114,28 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], RestaurantResolver.prototype, "createRestaurant", null);
+__decorate([
+    (0, type_graphql_1.FieldResolver)(() => type_graphql_1.Int, { nullable: true }),
+    __param(0, (0, type_graphql_1.Root)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Restaurant_1.Restaurant]),
+    __metadata("design:returntype", Promise)
+], RestaurantResolver.prototype, "reviewCount", null);
+__decorate([
+    (0, type_graphql_1.FieldResolver)(() => type_graphql_1.Float, { nullable: true }),
+    __param(0, (0, type_graphql_1.Root)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Restaurant_1.Restaurant]),
+    __metadata("design:returntype", Promise)
+], RestaurantResolver.prototype, "averageRating", null);
+__decorate([
+    (0, type_graphql_1.FieldResolver)(() => Boolean),
+    __param(0, (0, type_graphql_1.Ctx)()),
+    __param(1, (0, type_graphql_1.Root)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Restaurant_1.Restaurant]),
+    __metadata("design:returntype", Promise)
+], RestaurantResolver.prototype, "alreadyRated", null);
 RestaurantResolver = __decorate([
     (0, type_graphql_1.Resolver)(Restaurant_1.Restaurant)
 ], RestaurantResolver);

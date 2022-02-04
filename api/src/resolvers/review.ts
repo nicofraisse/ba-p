@@ -1,7 +1,12 @@
-import { getConnection } from 'typeorm'
+import { Review } from '../entities/Review'
+import {
+  getConnection,
+  Repository,
+  EntityManager,
+  EntityRepository,
+} from 'typeorm'
 import { isAuth } from './../middleware/isAuth'
 import { ServerContext } from './../types'
-import { Review } from '../entities/Review'
 import {
   Resolver,
   Query,
@@ -12,6 +17,9 @@ import {
   Field,
   InputType,
   UseMiddleware,
+  FieldResolver,
+  Root,
+  ObjectType,
 } from 'type-graphql'
 import { Upvote } from '../entities/Upvote'
 
@@ -25,7 +33,15 @@ class ReviewInput {
   restaurantId!: number
 }
 
-@Resolver()
+@ObjectType()
+class UpvoteResponse {
+  @Field()
+  points: number
+  @Field(() => Int, { nullable: true })
+  voteStatus: number
+}
+
+@Resolver(Review)
 export class ReviewResolver {
   // All reviews
   @Query(() => [Review])
@@ -83,7 +99,7 @@ export class ReviewResolver {
   }
 
   // Upvote review
-  @Mutation(() => Boolean)
+  @Mutation(() => UpvoteResponse)
   async vote(
     @Arg('reviewId', () => Int) reviewId: number,
     @Arg('value', () => Int) value: number,
@@ -93,20 +109,67 @@ export class ReviewResolver {
     const realValue = isUpvote ? 1 : -1
     const { userId } = req.session
 
-    await getConnection().query(
-      `
-    START TRANSACTION;
+    const upvote = await Upvote.findOne({ where: { reviewId, userId } })
+    // Already voted before, and changing the vote
+    const review = (await Review.findOne({ id: reviewId })) as any
+    if (upvote && upvote.value !== realValue) {
+      getConnection().transaction(async (tm) => {
+        await tm.query(
+          ` update upvote
+        set value = $1
+        where "userId" = $2 and "reviewId"  = $3;
+`,
+          [realValue, userId, reviewId]
+        )
 
-    insert into upvote ("userId", "reviewId", value)
-    values(${userId}, ${reviewId}, ${realValue})'
+        await tm.query(
+          ` update review
+        set points = points + $1
+        where id = $2;
+`,
+          [2 * realValue, reviewId]
+        )
+      })
+      return {
+        points: review.points + 2 * realValue,
+        voteStatus: realValue,
+      }
+      // Have not voted before
+    } else if (!upvote) {
+      getConnection().transaction(async (tm) => {
+        await tm.query(
+          `insert into upvote ("userId", "reviewId", value)
+        values($1, $2, $3)
+`,
+          [userId, reviewId, realValue]
+        )
+        await tm.query(
+          ` update review
+        set points = points + $1
+        where id = $2;
+`,
+          [realValue, reviewId]
+        )
+      })
+      return {
+        points: review.points + realValue,
+        voteStatus: realValue,
+      }
+    }
 
-    update review
-    set points = points + ${realValue}
-    where id = ${reviewId}
+    return { points: review.points, voteStatus: review.voteStatus }
+  }
 
-    COMMIT;`
-    )
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(@Root() review: Review, @Ctx() { req }: ServerContext) {
+    if (!req.session.userId) {
+      return null
+    }
 
-    return true
+    const upvote = await Upvote.findOne({
+      where: { userId: req.session.userId, reviewId: review.id },
+    })
+
+    return upvote ? upvote.value : null
   }
 }

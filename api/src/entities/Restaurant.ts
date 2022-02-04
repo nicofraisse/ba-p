@@ -30,6 +30,15 @@ export class Restaurant extends BaseEntity {
   updatedAt: Date
 
   @Field()
+  reviewCount: number
+
+  @Field()
+  averageRating: number
+
+  @Field()
+  aleadyRated: boolean
+
+  @Field()
   @Column({ unique: true })
   name!: string
 }
