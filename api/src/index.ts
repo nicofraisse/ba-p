@@ -18,27 +18,29 @@ import { __prod__ } from './constants'
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
 import { createConnection } from 'typeorm'
 import { Restaurant } from './entities/Restaurant'
+import 'dotenv-safe/config'
 
 const main = async () => {
-  await createConnection({
+  const conn = await createConnection({
     type: 'postgres',
-    database: 'poutineworld4',
-    username: 'postgres',
-    password: 'postgres',
+
+    url: process.env.DATABASE_URL,
     logging: true,
-    synchronize: true,
+    // synchronize: true,
     entities: [Post, User, Review, Restaurant, Upvote],
   })
 
   // Run all new migrations whenever server restarts
+  await conn.runMigrations()
 
   const app = express()
   const RedisStore = connectRedis(session)
-  const redis = new Redis()
+  const redis = new Redis(process.env.REDIS_URL)
+  app.set('proxy', 1)
 
   app.use(
     cors({
-      origin: 'http://localhost:3000',
+      origin: process.env.CORS_ORIGIN,
       credentials: true,
     })
   )
@@ -53,7 +55,7 @@ const main = async () => {
         sameSite: 'lax', // csrf
       },
       saveUninitialized: false,
-      secret: 'qls3sdu93m4cyt09wqy0lq4us0ql9rs08qy34097qxy8ae',
+      secret: process.env.SESSION_SECRET,
       resave: false,
     })
   )
@@ -78,8 +80,8 @@ const main = async () => {
     cors: false,
   })
 
-  app.listen(4000, () => {
-    console.log('Server started on localhost:4000')
+  app.listen(parseInt(process.env.PORT), () => {
+    console.log(`Server started on localhost:${process.env.PORT}`)
   })
 }
 

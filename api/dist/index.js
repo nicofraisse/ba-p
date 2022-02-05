@@ -23,21 +23,21 @@ const constants_1 = require("./constants");
 const apollo_server_core_1 = require("apollo-server-core");
 const typeorm_1 = require("typeorm");
 const Restaurant_1 = require("./entities/Restaurant");
+require("dotenv-safe/config");
 const main = async () => {
-    await (0, typeorm_1.createConnection)({
+    const conn = await (0, typeorm_1.createConnection)({
         type: 'postgres',
-        database: 'poutineworld4',
-        username: 'postgres',
-        password: 'postgres',
+        url: process.env.DATABASE_URL,
         logging: true,
-        synchronize: true,
         entities: [Post_1.Post, User_1.User, Review_1.Review, Restaurant_1.Restaurant, Upvote_1.Upvote],
     });
+    await conn.runMigrations();
     const app = (0, express_1.default)();
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
-    const redis = new ioredis_1.default();
+    const redis = new ioredis_1.default(process.env.REDIS_URL);
+    app.set('proxy', 1);
     app.use((0, cors_1.default)({
-        origin: 'http://localhost:3000',
+        origin: process.env.CORS_ORIGIN,
         credentials: true,
     }));
     app.use((0, express_session_1.default)({
@@ -50,7 +50,7 @@ const main = async () => {
             sameSite: 'lax',
         },
         saveUninitialized: false,
-        secret: 'qls3sdu93m4cyt09wqy0lq4us0ql9rs08qy34097qxy8ae',
+        secret: process.env.SESSION_SECRET,
         resave: false,
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
@@ -71,8 +71,8 @@ const main = async () => {
         app,
         cors: false,
     });
-    app.listen(4000, () => {
-        console.log('Server started on localhost:4000');
+    app.listen(parseInt(process.env.PORT), () => {
+        console.log(`Server started on localhost:${process.env.PORT}`);
     });
 };
 main().catch((e) => console.log(e));

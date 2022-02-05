@@ -1,27 +1,22 @@
-import { Review } from '../entities/Review'
 import {
-  getConnection,
-  Repository,
-  EntityManager,
-  EntityRepository,
-} from 'typeorm'
-import { isAuth } from './../middleware/isAuth'
-import { ServerContext } from './../types'
-import {
-  Resolver,
-  Query,
-  Ctx,
   Arg,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
   Int,
   Mutation,
-  Field,
-  InputType,
-  UseMiddleware,
-  FieldResolver,
-  Root,
   ObjectType,
+  Query,
+  Resolver,
+  Root,
+  UseMiddleware,
 } from 'type-graphql'
+import { getConnection } from 'typeorm'
+import { Review } from '../entities/Review'
 import { Upvote } from '../entities/Upvote'
+import { isAuth } from './../middleware/isAuth'
+import { ServerContext } from './../types'
 
 @InputType()
 class ReviewInput {
@@ -77,24 +72,37 @@ export class ReviewResolver {
 
   // Update review
   @Mutation(() => Review, { nullable: true })
+  @UseMiddleware(isAuth)
   async updateReview(
-    @Arg('id') id: number,
-    @Arg('comment', () => String) comment: string
+    @Arg('id', () => Int) id: number,
+    @Arg('comment', () => String) comment: string,
+    @Arg('rating', () => Int) rating: number,
+    @Ctx() { req }: ServerContext
   ): Promise<Review | null> {
     const review = await Review.findOne(id)
     if (!review) {
       return null
     }
-    if (typeof comment !== 'undefined') {
-      Review.update({ id }, { comment })
+
+    if (review.userId !== req.session.userId) {
+      throw new Error('Vous ne pouvez modifier que vos propres avis')
     }
+
+    if (typeof comment !== 'undefined') {
+      Review.update({ id }, { comment, rating })
+    }
+
     return review
   }
 
   // Delete review
   @Mutation(() => Boolean)
-  async deleteReview(@Arg('id', () => Int) id: number): Promise<Boolean> {
-    await Review.delete(id)
+  @UseMiddleware(isAuth)
+  async deleteReview(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { req }: ServerContext
+  ): Promise<Boolean> {
+    await Review.delete({ id, userId: req.session.userId })
     return true
   }
 

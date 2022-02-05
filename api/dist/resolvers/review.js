@@ -13,11 +13,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReviewResolver = void 0;
-const Review_1 = require("../entities/Review");
-const typeorm_1 = require("typeorm");
-const isAuth_1 = require("./../middleware/isAuth");
 const type_graphql_1 = require("type-graphql");
+const typeorm_1 = require("typeorm");
+const Review_1 = require("../entities/Review");
 const Upvote_1 = require("../entities/Upvote");
+const isAuth_1 = require("./../middleware/isAuth");
 let ReviewInput = class ReviewInput {
 };
 __decorate([
@@ -60,18 +60,21 @@ let ReviewResolver = class ReviewResolver {
         const review = await Review_1.Review.create(Object.assign(Object.assign({}, input), { userId: req.session.userId })).save();
         return review;
     }
-    async updateReview(id, comment) {
+    async updateReview(id, comment, rating, { req }) {
         const review = await Review_1.Review.findOne(id);
         if (!review) {
             return null;
         }
+        if (review.userId !== req.session.userId) {
+            throw new Error('Vous ne pouvez modifier que vos propres avis');
+        }
         if (typeof comment !== 'undefined') {
-            Review_1.Review.update({ id }, { comment });
+            Review_1.Review.update({ id }, { comment, rating });
         }
         return review;
     }
-    async deleteReview(id) {
-        await Review_1.Review.delete(id);
+    async deleteReview(id, { req }) {
+        await Review_1.Review.delete({ id, userId: req.session.userId });
         return true;
     }
     async vote(reviewId, value, { req }) {
@@ -148,17 +151,22 @@ __decorate([
 ], ReviewResolver.prototype, "createReview", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => Review_1.Review, { nullable: true }),
-    __param(0, (0, type_graphql_1.Arg)('id')),
+    (0, type_graphql_1.UseMiddleware)(isAuth_1.isAuth),
+    __param(0, (0, type_graphql_1.Arg)('id', () => type_graphql_1.Int)),
     __param(1, (0, type_graphql_1.Arg)('comment', () => String)),
+    __param(2, (0, type_graphql_1.Arg)('rating', () => type_graphql_1.Int)),
+    __param(3, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:paramtypes", [Number, String, Number, Object]),
     __metadata("design:returntype", Promise)
 ], ReviewResolver.prototype, "updateReview", null);
 __decorate([
     (0, type_graphql_1.Mutation)(() => Boolean),
+    (0, type_graphql_1.UseMiddleware)(isAuth_1.isAuth),
     __param(0, (0, type_graphql_1.Arg)('id', () => type_graphql_1.Int)),
+    __param(1, (0, type_graphql_1.Ctx)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], ReviewResolver.prototype, "deleteReview", null);
 __decorate([

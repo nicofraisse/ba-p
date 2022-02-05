@@ -34,7 +34,9 @@ export class Upvote extends BaseEntity {
   reviewId: number
 
   @Field(() => Review)
-  @ManyToOne(() => Review, (review: Review) => review.upvotes)
+  @ManyToOne(() => Review, (review: Review) => review.upvotes, {
+    onDelete: 'CASCADE',
+  })
   review: Review
 
   @Field(() => String)

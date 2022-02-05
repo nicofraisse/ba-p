@@ -38,7 +38,9 @@ __decorate([
 ], Upvote.prototype, "reviewId", void 0);
 __decorate([
     (0, type_graphql_1.Field)(() => Review_1.Review),
-    (0, typeorm_1.ManyToOne)(() => Review_1.Review, (review) => review.upvotes),
+    (0, typeorm_1.ManyToOne)(() => Review_1.Review, (review) => review.upvotes, {
+        onDelete: 'CASCADE',
+    }),
     __metadata("design:type", Review_1.Review)
 ], Upvote.prototype, "review", void 0);
 __decorate([
